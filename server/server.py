@@ -1,5 +1,8 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+import pickle
+
+e)
 
 app = Flask(__name__)
 CORS(app)
@@ -22,7 +25,7 @@ def train():
         })
 
 @app.route("/train_importance", methods=["POST"])
-def predict_importance():
+def train_importance():
     if cuda.is_available():
         device = 'cuda'
     else:
@@ -102,7 +105,20 @@ def predict_importance():
     # Start the fine-tuning
     trainer.train()
 
+    test_dataset = tokenized_datasets["test"]
+    test_predictions = trainer.predict(test_dataset)
+    preds = np.argmax(test_predictions.predictions, axis=-1)
+    with open('model.pkl') as file:
+        pickle.dump(trainer, file)
+    
 
+
+@app.route("/predict_importance", methods=["POST"])
+def predict_importance():
+    with open('model.pkl', 'rb') as file:
+        loaded_model = pickle.load(file)
+    
+    loaded_model(unread_emails_tests)
 
 
         
