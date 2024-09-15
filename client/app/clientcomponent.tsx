@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
 interface Email {
   subject: string;
   sender: string;
@@ -30,14 +29,8 @@ export default function ClientComponent({
 
   const handleButtonClick = async () => {
     try {
-      const response = await fetch("/api/emails", { method: "GET" });
-      const data = await response.json();
-      if (data.emails) {
-        setEmails(data.emails);
-      } else {
-        setEmails([]);
-        setMessage(data.message || "No emails found");
-      }
+      //   const newEmails = await getInitialEmails();
+      //   setEmails(newEmails);
     } catch (error) {
       console.error("Error fetching emails:", error);
       setEmails([]);

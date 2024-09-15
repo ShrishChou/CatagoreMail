@@ -1,14 +1,3 @@
-from transformers import  AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding, TrainingArguments, Trainer
-import numpy as np
-import evaluate
-import pandas as pd
-from datasets import Dataset, DatasetDict
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
-from torch import cudafrom sklearn.metrics import fbeta_score, accuracy_score
-from sklearn.metrics import accuracy_score
-
-
 from flask import Flask, jsonify
 from flask_cors import CORS
 
@@ -16,11 +5,21 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route("/api/train", methods=["GET"])
+@app.route("/api/train", methods=["GET", "POST"])
 def train():
-    return jsonify({
-        "message": "Hello ffw World"
-    })
+    if request.method == "POST":
+        emails = request.json.get('emails', [])
+        # Process the emails here
+        # For now, we'll just return the count of emails received
+        print(emails)
+        return jsonify({
+            "message": f"Received {len(emails)} emails for training",
+            "emailCount": len(emails)
+        })
+    else:
+        return jsonify({
+            "message": str(request.method)
+        })
 
 @app.route("/train_importance", methods=["POST"])
 def predict_importance():

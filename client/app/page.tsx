@@ -116,7 +116,7 @@ async function fetchEmails(gmail: any, query: string, maxResults: number) {
 
   return emails.slice(0, maxResults);
 }
-async function getInitialEmails() {
+export async function getInitialEmails() {
   // This function should contain the logic from your GET function in the API route
   // You'll need to move the getGmailService, fetchEmails, and fetchEmailData functions here
   // ...
@@ -142,7 +142,36 @@ async function getInitialEmails() {
   }
 }
 
+async function sendEmailsToFlaskAPI(emails: any[]) {
+  try {
+    const response = await fetch("http://localhost:8080/api/train", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ emails }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Flask API response:", result);
+    return result;
+  } catch (error) {
+    console.error("Error sending emails to Flask API:", error);
+    throw error;
+  }
+}
+
 export default async function Page() {
   const initialEmails = await getInitialEmails();
+  let flaskApiResponse = null;
+  try {
+    flaskApiResponse = await sendEmailsToFlaskAPI(initialEmails);
+  } catch (error) {
+    console.error("Failed to send emails to Flask API:", error);
+  }
   return <ClientComponent initialEmails={initialEmails} />;
 }
