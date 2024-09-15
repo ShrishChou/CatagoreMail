@@ -1,62 +1,58 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-interface Email {
-  subject: string;
-  sender: string;
-  body: string;
+import React from "react";
+import { useUser } from "@clerk/nextjs";
+
+interface TrainingResult {
+  message: string;
+  texts: string[];
+  actual_labels: string[];
+  predicted_labels: string[];
 }
 
 export default function ClientComponent({
-  initialEmails,
+  flaskApiResponse,
 }: {
-  initialEmails: Email[];
+  flaskApiResponse: TrainingResult | null;
 }) {
-  const [message, setMessage] = useState("Loading");
-  const [emails, setEmails] = useState<Email[]>(initialEmails);
+  const { isSignedIn, user } = useUser();
 
-  useEffect(() => {
-    fetch("http://localhost:8080/api/train")
-      .then((response) => response.json())
-      .then((data) => {
-        setMessage(data.message);
-      })
-      .catch((error) => {
-        console.error("Error fetching training data:", error);
-        setMessage("Error loading training data");
-      });
-  }, []);
+  if (!isSignedIn) {
+    return (
+      <div className="text-center py-10">
+        <p>Please sign in to view the results.</p>
+      </div>
+    );
+  }
 
-  const handleButtonClick = async () => {
-    try {
-      //   const newEmails = await getInitialEmails();
-      //   setEmails(newEmails);
-    } catch (error) {
-      console.error("Error fetching emails:", error);
-      setEmails([]);
-      setMessage("Error occurred while fetching emails");
-    }
-  };
+  if (!flaskApiResponse) {
+    return (
+      <div className="text-center py-10">
+        <p>No data available. Please run the training process.</p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div>{message}</div>
-      <button onClick={handleButtonClick}>Refresh Emails</button>
+      <div>{flaskApiResponse.message}</div>
       <div>
-        {emails.length > 0 ? (
+        {flaskApiResponse.texts && flaskApiResponse.texts.length > 0 ? (
           <ul>
-            {emails.map((email, index) => (
-              <li key={index}>
-                <strong>Subject:</strong> {email.subject}
+            {flaskApiResponse.texts.map((text, index) => (
+              <li key={index} className="mb-4">
+                <strong>Text:</strong> {text.substring(0, 100)}...
                 <br />
-                <strong>From:</strong> {email.sender}
+                <strong>Actual Label:</strong>{" "}
+                {flaskApiResponse.actual_labels[index]}
                 <br />
-                <strong>Body:</strong> {email.body.substring(0, 100)}...
+                <strong>Predicted Label:</strong>{" "}
+                {flaskApiResponse.predicted_labels[index]}
               </li>
             ))}
           </ul>
         ) : (
-          <p>No emails to display</p>
+          <p>No results to display</p>
         )}
       </div>
     </div>

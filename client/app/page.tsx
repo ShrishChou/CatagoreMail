@@ -128,7 +128,7 @@ export async function getInitialEmails(read: number) {
       query = "is:unread";
     }
     const gmail = await getGmailService();
-    const totalRead = 5;
+    const totalRead = 100;
     const readMessages = await fetchEmails(gmail, query, totalRead);
 
     if (readMessages.length > 0) {
@@ -175,14 +175,27 @@ async function sendEmailsToFlaskAPI(emails: any[]) {
 }
 
 export default async function Page() {
-  const initialReadEmails = await getInitialEmails(1);
-  const initialUnreadEmails = await getInitialEmails(0);
-  const initialEmails = initialReadEmails.concat(initialUnreadEmails);
   let flaskApiResponse = null;
   try {
-    flaskApiResponse = await sendEmailsToFlaskAPI(initialEmails);
+    const { userId } = auth();
+    let flaskApiResponse = null;
+    if (userId) {
+      try {
+        const initialReadEmails = await getInitialEmails(1);
+        const initialUnreadEmails = await getInitialEmails(0);
+        const initialEmails = initialReadEmails.concat(initialUnreadEmails);
+        flaskApiResponse = await sendEmailsToFlaskAPI(initialEmails);
+      } catch (error) {
+        console.error("Failed to send emails to Flask API:", error);
+      }
+    }
   } catch (error) {
     console.error("Failed to send emails to Flask API:", error);
   }
-  return <ClientComponent initialEmails={initialEmails} />;
+  return (
+    <ClientComponent
+      flaskApiResponse={flaskApiResponse}
+      // initialEmails={initialEmails}
+    />
+  );
 }
