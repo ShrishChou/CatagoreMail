@@ -46,7 +46,7 @@ function decodeEmailBody(payload: any): string {
   return "No body content";
 }
 
-async function fetchEmailData(gmail: any, messageId: string) {
+async function fetchEmailData(gmail: any, messageId: string, read: number) {
   const msg = await gmail.users.messages.get({
     userId: "me",
     id: messageId,
@@ -61,7 +61,7 @@ async function fetchEmailData(gmail: any, messageId: string) {
     headers.find((header: any) => header.name === "From")?.value || "No Sender";
   const body = decodeEmailBody(msg.data.payload);
 
-  return { subject, sender, body };
+  return { subject, sender, body, read };
 }
 async function getGmailLabels() {
   try {
@@ -116,20 +116,29 @@ async function fetchEmails(gmail: any, query: string, maxResults: number) {
 
   return emails.slice(0, maxResults);
 }
-export async function getInitialEmails() {
+export async function getInitialEmails(read: number) {
   // This function should contain the logic from your GET function in the API route
-  // You'll need to move the getGmailService, fetchEmails, and fetchEmailData functions here
   // ...
 
   try {
+    let query = "";
+    if (read == 1) {
+      query = "is:read";
+    } else {
+      query = "is:unread";
+    }
     const gmail = await getGmailService();
     const totalRead = 5;
-    const readMessages = await fetchEmails(gmail, "is:read", totalRead);
+    const readMessages = await fetchEmails(gmail, query, totalRead);
 
     if (readMessages.length > 0) {
       let readEmails = [];
       for (let idx = 0; idx < readMessages.length; idx++) {
-        const emailData = await fetchEmailData(gmail, readMessages[idx].id);
+        const emailData = await fetchEmailData(
+          gmail,
+          readMessages[idx].id,
+          read
+        );
         readEmails.push(emailData);
       }
       return readEmails;
@@ -166,7 +175,9 @@ async function sendEmailsToFlaskAPI(emails: any[]) {
 }
 
 export default async function Page() {
-  const initialEmails = await getInitialEmails();
+  const initialReadEmails = await getInitialEmails(1);
+  const initialUnreadEmails = await getInitialEmails(0);
+  const initialEmails = initialReadEmails.concat(initialUnreadEmails);
   let flaskApiResponse = null;
   try {
     flaskApiResponse = await sendEmailsToFlaskAPI(initialEmails);
