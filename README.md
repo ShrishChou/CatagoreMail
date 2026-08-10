@@ -1,23 +1,41 @@
+![CatagoreMail](https://github.com/user-attachments/assets/d6370ced-58fc-4b6b-a2c1-3725ecde164a)
 
-![Screenshot 2024-09-15 020441](https://github.com/user-attachments/assets/d6370ced-58fc-4b6b-a2c1-3725ecde164a)
+# CatagoreMail
 
+**An inbox triage model trained on *your* behaviour — not on a generic notion of what "important" means.**
 
-# The app that finds what is important to you and makes sure you never miss an email again
-## Overview
- - Full stack application with a combination of Next JS and Flask
- - Uses Google and Email API along with Google Cloud Project to retrieve data on the last 5,000 read and unread emails
- - Utilized Clerk authentication to validate emails --> important for making API calls
- - This data is used to fine tune an LLM called **Distill Bert** through Hugging Face's trainer to predict which emails are relevant enough to be read
-    - achieved an accuracy of **88 percent** on our test set.
- - Finally use trained LLM to make predictions on if an email is important enough to read
-## Demo
-[![DEMO](https://img.youtube.com/vi/rVbf_sLMUyM/0.jpg)](https://www.youtube.com/watch?v=rVbf_sLMUyM)
+Every email client has an importance filter, and they are all trained on somebody else's inbox. What counts as urgent is personal: the newsletter you actually read, the automated alert you have never once opened. CatagoreMail learns that boundary from the only signal that actually encodes it — which emails **you** have opened and which you have not.
 
-## How to run
-1. Setup Clerk Authentication
-2. Setup Google Project
-3. Get Certificates Json
-4. Clone Project
-5. npm install
-6. npm run dev
-7. python3 server.py runserver
+It pulls your last 5,000 read and unread messages, fine-tunes DistilBERT on that split, and uses the result to predict whether a new email is worth surfacing. **88% accuracy** on the held-out test set.
+
+📺 **[Demo](https://www.youtube.com/watch?v=rVbf_sLMUyM)**
+
+---
+
+## Architecture
+
+```
+Next.js  ──►  Clerk auth  ──►  Gmail API  ──►  Flask  ──►  DistilBERT
+front-end     validated       last 5,000     training     read/unread
+              identity        messages       + inference  classifier
+```
+
+The read/unread split is what makes this work: it is a large, already-labelled, continuously-updating dataset that every user carries around without having to annotate anything.
+
+**Stack** — Next.js + TypeScript front-end, Flask back-end, Google Cloud project for Gmail API access, Clerk for authentication, Hugging Face `Trainer` for fine-tuning.
+
+Clerk is load-bearing rather than decorative: identity has to be verified before any Gmail API call is made on a user's behalf, since the whole system is built around reading a real mailbox.
+
+## Running
+
+1. Set up Clerk authentication
+2. Set up a Google Cloud project with the Gmail API enabled
+3. Download the credentials JSON
+
+```bash
+git clone https://github.com/ShrishChou/CatagoreMail.git
+cd CatagoreMail
+npm install
+npm run dev            # front-end
+python3 server.py      # back-end
+```
